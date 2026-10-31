@@ -150,9 +150,9 @@ fn video_encoder_args(spec: &ExportSpec, rate: Rate) -> Vec<String> {
                 ])),
                 (Codec::H265, None) => args.extend(s(&["-x265-params", "log-level=error"])),
                 (_, Some(pass)) => args.extend(s(&[
-                    "-pass",
+                    "-pass:v",
                     &pass.to_string(),
-                    "-passlogfile",
+                    "-passlogfile:v",
                     PASS_LOG,
                 ])),
                 _ => {}
@@ -361,7 +361,7 @@ mod tests {
         let args = video_args(&spec(vec![clip()]), rate, "o.mp4");
         assert_eq!(args.last().unwrap(), "-");
         assert!(args.contains(&"-an".to_string()));
-        assert!(args.contains(&"-passlogfile".to_string()));
+        assert!(args.contains(&"-passlogfile:v".to_string()));
     }
 
     #[test]
