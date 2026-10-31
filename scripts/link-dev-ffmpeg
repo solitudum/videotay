@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# Development only: points the Tauri sidecars at the ffmpeg already on PATH, so
+# `tauri dev` works without downloading anything. These binaries aren't
+# portable, so run scripts/fetch-ffmpeg before building an app to distribute.
+set -euo pipefail
+
+root="$(cd "$(dirname "$0")/.." && pwd)"
+out="$root/src-tauri/binaries"
+triple="$(rustc -vV | awk '/^host:/ {print $2}')"
+mkdir -p "$out"
+
+for tool in ffmpeg ffprobe; do
+  ln -sf "$(command -v "$tool")" "$out/$tool-$triple"
+done
+ls -la "$out"

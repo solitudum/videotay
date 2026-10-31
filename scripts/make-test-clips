@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# Generates short clips of mixed size, fps and audio. They're used by the Rust
+# integration tests and by the browser preview's mock backend.
+set -euo pipefail
+
+root="$(cd "$(dirname "$0")/.." && pwd)"
+out="$root/public/dev-clips"
+mkdir -p "$out"
+ff="ffmpeg -hide_banner -loglevel error -y"
+
+$ff -f lavfi -i "testsrc2=s=1280x720:r=30:d=6" -f lavfi -i "sine=f=440:d=6" \
+  -c:v libx264 -pix_fmt yuv420p -g 15 -c:a aac -shortest "$out/landscape-720p30.mp4"
+$ff -f lavfi -i "smptebars=s=720x1280:r=24:d=4" -f lavfi -i "sine=f=660:d=4" \
+  -c:v libx264 -pix_fmt yuv420p -g 12 -c:a aac -shortest "$out/portrait-24fps.mp4"
+$ff -f lavfi -i "testsrc=s=640x640:r=60:d=5" \
+  -c:v libx264 -pix_fmt yuv420p -g 30 "$out/square-60fps-silent.mp4"
+
+ls -la "$out"
