@@ -21,7 +21,7 @@ case "$(uname -s)-$(uname -m)" in
   MINGW*|MSYS*|CYGWIN*)
     triple=x86_64-pc-windows-msvc
     url=https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip
-    curl -fL --retry 3 -o "$tmp/ffmpeg.zip" "$url"
+    curl -fL --retry 5 --retry-all-errors -o "$tmp/ffmpeg.zip" "$url"
     unzip -q "$tmp/ffmpeg.zip" -d "$tmp/x"
     cp "$tmp"/x/*/bin/ffmpeg.exe "$out/ffmpeg-$triple.exe"
     cp "$tmp"/x/*/bin/ffprobe.exe "$out/ffprobe-$triple.exe"
@@ -36,9 +36,8 @@ esac
 
 for tool in ffmpeg ffprobe; do
   # The checksum sits beside the real file, and has no "latest" redirect of its own.
-  url="$(curl -fsIL --retry 3 -o /dev/null -w '%{url_effective}' "$base/$tool.zip")"
-  curl -fL --retry 3 -o "$tmp/$tool.zip" "$url"
-  expected="$(curl -fsL --retry 3 "$url.sha256" | awk '{print $1}')"
+  url="$(curl -fsSL --retry 5 --retry-all-errors -o "$tmp/$tool.zip" -w '%{url_effective}' "$base/$tool.zip")"
+  expected="$(curl -fsSL --retry 5 --retry-all-errors "$url.sha256" | awk '{print $1}')"
   actual="$(shasum -a 256 "$tmp/$tool.zip" | awk '{print $1}')"
   if [ "$expected" != "$actual" ]; then
     echo "Checksum mismatch for $tool: expected $expected, got $actual" >&2
