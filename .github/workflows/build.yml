@@ -78,3 +78,11 @@ jobs:
           releaseName: Videotay ${{ github.ref_name }}
           releaseDraft: true
           generateReleaseNotes: true
+
+      # Signing can stop a sidecar from loading, which only shows once it's bundled.
+      - name: Check bundled ffmpeg still encodes
+        if: ${{ runner.os == 'macOS' }}
+        run: |
+          app=src-tauri/target/release/bundle/macos/Videotay.app/Contents/MacOS
+          "$app/ffprobe" -hide_banner -version | head -1
+          "$app/ffmpeg" -hide_banner -f lavfi -i testsrc=duration=1 -c:v libx264 -f null -

@@ -35,8 +35,10 @@ case "$(uname -s)-$(uname -m)" in
 esac
 
 for tool in ffmpeg ffprobe; do
-  curl -fL --retry 3 -o "$tmp/$tool.zip" "$base/$tool.zip"
-  expected="$(curl -fsL --retry 3 "$base/$tool.zip.sha256" | awk '{print $1}')"
+  # The checksum sits beside the real file, and has no "latest" redirect of its own.
+  url="$(curl -fsIL --retry 3 -o /dev/null -w '%{url_effective}' "$base/$tool.zip")"
+  curl -fL --retry 3 -o "$tmp/$tool.zip" "$url"
+  expected="$(curl -fsL --retry 3 "$url.sha256" | awk '{print $1}')"
   actual="$(shasum -a 256 "$tmp/$tool.zip" | awk '{print $1}')"
   if [ "$expected" != "$actual" ]; then
     echo "Checksum mismatch for $tool: expected $expected, got $actual" >&2

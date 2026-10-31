@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Development only: points the Tauri sidecars at the ffmpeg already on PATH, so
 # `tauri dev` works without downloading anything. These binaries aren't
-# portable, so run scripts/fetch-ffmpeg before building an app to distribute.
+# portable, and Homebrew's read-only ones make `tauri build` fail while signing,
+# so run scripts/fetch-ffmpeg before building an app.
 set -euo pipefail
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
