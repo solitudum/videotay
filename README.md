@@ -50,8 +50,32 @@ cd src-tauri && cargo test
 npm run fetch-ffmpeg
 ```
 
+Updater signatures need the release key, so skip them when you're only building locally.
+
 ```bash
-npx tauri build
+npx tauri build --config '{"bundle":{"createUpdaterArtifacts":false}}'
 ```
 
-These ffmpeg builds include x264 and x265, which makes them GPL. Distributing the app means complying with the GPL. Builds are unsigned, so Gatekeeper and SmartScreen will warn on other machines.
+These ffmpeg builds include x264 and x265, which makes them GPL. Distributing the app means complying with the GPL. Builds aren't notarized or code signed, so Gatekeeper and SmartScreen will warn on other machines.
+
+## Release
+
+This sets the version, then commits, tags and pushes to `main`. The tag makes CI test and build for Apple Silicon and Windows x64, and upload the installers to a draft release.
+
+```bash
+npm run release -- 0.2.0
+```
+
+Nothing reaches anyone until you publish the draft. Publishing is also what makes it the update installed copies see.
+
+```bash
+gh release edit v0.2.0 --draft=false
+```
+
+The app checks for a new version when it launches, and from "Check for updates" in the command palette. It downloads in the background, then shows "Restart to update" in the header.
+
+Updates are signed with a private key, which CI reads from the `TAURI_SIGNING_PRIVATE_KEY` secret. The matching public key is in `tauri.conf.json`. Keep a backup of `~/.tauri/videotay.key` somewhere safe: installed copies only accept updates signed with that key, so losing it means everyone has to reinstall by hand.
+
+## Install
+
+Download the `.dmg` or `-setup.exe` from [Releases](https://github.com/solitudum/videotay/releases). Because the builds aren't notarized, macOS blocks the first launch: try to open the app, then choose **Open Anyway** in System Settings → Privacy & Security. On Windows, choose **More info → Run anyway**. Move the app to Applications on macOS, because it can't update itself while it's running from the disk image.

@@ -113,4 +113,15 @@ export const mockBackend: Backend = {
     finishedHandler = handler;
   },
   onFileDrop() {},
+  // Add ?update to the URL to see an update arrive.
+  async downloadUpdate() {
+    if (!location.search.includes("update")) return null;
+    return {
+      version: "9.9.9",
+      async install() {
+        location.search = "";
+      },
+    };
+  },
+  confirm: async (message) => window.confirm(message),
 };

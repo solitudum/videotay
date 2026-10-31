@@ -2,6 +2,7 @@ import { startExport } from "./exporting";
 import { pickAndImport } from "./media";
 import { useProject } from "./state/project";
 import type { ExportSettings, Rotation } from "./types";
+import { checkForUpdate } from "./updates";
 
 export interface Command {
   id: string;
@@ -106,6 +107,11 @@ export const COMMANDS: Command[] = [
     run: () => changeExport({ format: "webm", codec: "vp9", crf: 33 }),
   },
   { id: "format-gif", title: "Export as GIF", run: () => changeExport({ format: "gif" }) },
+  {
+    id: "check-updates",
+    title: "Check for updates",
+    run: () => void checkForUpdate({ announce: true }),
+  },
 ];
 
 const KEY_NAMES: Record<string, string> = {

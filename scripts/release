@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+# Sets the app version everywhere it's recorded, then commits, tags and pushes.
+# The tag makes CI build a draft release. Nobody gets the update until it's published.
+set -euo pipefail
+
+version="${1:-}"
+if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+  echo "Usage: npm run release -- 1.2.3" >&2
+  exit 1
+fi
+
+cd "$(dirname "$0")/.."
+if [ -n "$(git status --porcelain)" ]; then
+  echo "Commit or stash your changes first." >&2
+  exit 1
+fi
+if [ "$(git branch --show-current)" != main ]; then
+  echo "Releases are cut from main." >&2
+  exit 1
+fi
+git pull --ff-only
+
+npm version "$version" --no-git-tag-version >/dev/null
+perl -pi -e 's/^(  "version": ")[^"]+/${1}'"$version"'/' src-tauri/tauri.conf.json
+perl -0pi -e 's/^version = "[^"]+"/version = "'"$version"'"/m' src-tauri/Cargo.toml
+perl -0pi -e 's/(name = "videotay"\nversion = ")[^"]+/${1}'"$version"'/' src-tauri/Cargo.lock
+
+git add package.json package-lock.json src-tauri/tauri.conf.json src-tauri/Cargo.toml src-tauri/Cargo.lock
+git commit -m "Release $version"
+git tag "v$version"
+git push origin main "v$version"
+
+echo "CI is building the draft: $(gh repo view --json url -q .url)/releases"
+echo "Once it's ready, publish it to ship the update: gh release edit v$version --draft=false"

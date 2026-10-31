@@ -9,6 +9,12 @@ export interface ProbeInfo {
   hasAudio: boolean;
 }
 
+export interface PendingUpdate {
+  version: string;
+  /** Replaces the app and restarts it. */
+  install(): Promise<void>;
+}
+
 export interface Backend {
   probe(path: string): Promise<ProbeInfo>;
   thumbnails(id: string, path: string, duration: number): Promise<{ urls: string[]; interval: number }>;
@@ -25,6 +31,9 @@ export interface Backend {
   onFinished(handler: (finished: ExportFinished) => void): void;
   /** Reports file drags over the window: hover state and dropped paths. */
   onFileDrop(handlers: { hover(on: boolean): void; drop(paths: string[]): void }): void;
+  /** Resolves once a newer version has downloaded, or with null if there isn't one. */
+  downloadUpdate(): Promise<PendingUpdate | null>;
+  confirm(message: string): Promise<boolean>;
 }
 
 export const VIDEO_EXTENSIONS = [

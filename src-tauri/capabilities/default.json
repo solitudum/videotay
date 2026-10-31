@@ -7,6 +7,9 @@
     "core:window:allow-start-dragging",
     "dialog:allow-open",
     "dialog:allow-save",
-    "opener:allow-reveal-item-in-dir"
+    "dialog:allow-ask",
+    "opener:allow-reveal-item-in-dir",
+    "process:allow-restart",
+    "updater:default"
   ]
 }

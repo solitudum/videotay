@@ -3,12 +3,18 @@ name: Build
 on:
   push:
     branches: [main]
+    tags: ["v*"]
   pull_request:
 
 jobs:
   build:
+    permissions:
+      contents: write
     strategy:
       fail-fast: false
+      # Each platform adds itself to the same draft release and latest.json, so
+      # running a tag's builds together could create two drafts.
+      max-parallel: ${{ startsWith(github.ref, 'refs/tags/') && 1 || 2 }}
       matrix:
         os: [macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
@@ -38,12 +44,37 @@ jobs:
           done
       - run: bash scripts/make-test-clips
         shell: bash
+      # Compiling the app embeds the frontend, so cargo test needs it built.
+      - run: npm run build
       - run: cargo test
         working-directory: src-tauri
-      - run: npx tauri build
-      - uses: actions/upload-artifact@v4
+
+      - name: Build without updater signatures
+        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+        shell: bash
+        run: npx tauri build --config '{"bundle":{"createUpdaterArtifacts":false}}'
+      - if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+        uses: actions/upload-artifact@v4
         with:
           name: videotay-${{ matrix.os }}
           path: |
             src-tauri/target/release/bundle/dmg/*.dmg
             src-tauri/target/release/bundle/nsis/*.exe
+
+      - name: Check the tag matches the app version
+        if: ${{ startsWith(github.ref, 'refs/tags/') }}
+        shell: bash
+        run: test "$GITHUB_REF_NAME" = "v$(node -p "require('./src-tauri/tauri.conf.json').version")"
+      - name: Build and add to the draft release
+        if: ${{ startsWith(github.ref, 'refs/tags/') }}
+        # Pinned to a commit because this step can read the signing key.
+        uses: tauri-apps/tauri-action@1deb371b0cd8bd54025b384f1cd735e725c4060f # action-v1.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ""
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: Videotay ${{ github.ref_name }}
+          releaseDraft: true
+          generateReleaseNotes: true

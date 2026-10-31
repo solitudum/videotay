@@ -1,8 +1,10 @@
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
-import { open, save } from "@tauri-apps/plugin-dialog";
+import { ask, open, save } from "@tauri-apps/plugin-dialog";
 import { revealItemInDir } from "@tauri-apps/plugin-opener";
+import { relaunch } from "@tauri-apps/plugin-process";
+import { check } from "@tauri-apps/plugin-updater";
 import type { ExportFinished, ExportProgress } from "../types";
 import { VIDEO_EXTENSIONS, type Backend, type ProbeInfo } from "./api";
 
@@ -56,4 +58,19 @@ export const tauriBackend: Backend = {
       }
     });
   },
+  async downloadUpdate() {
+    // `tauri dev` would otherwise fetch a release to replace a build that isn't installed.
+    if (import.meta.env.DEV) return null;
+    const update = await check();
+    if (!update) return null;
+    await update.download();
+    return {
+      version: update.version,
+      async install() {
+        await update.install();
+        await relaunch();
+      },
+    };
+  },
+  confirm: (message) => ask(message, { title: "Videotay", kind: "warning" }),
 };

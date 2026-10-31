@@ -1,5 +1,5 @@
 import { useEffect, useState, type CSSProperties, type PointerEvent } from "react";
-import { Command, Plus, X } from "lucide-react";
+import { Command, Plus, RefreshCw, X } from "lucide-react";
 import { backend } from "./backend";
 import { handleKeyDown } from "./commands";
 import { wireExportEvents } from "./exporting";
@@ -11,6 +11,7 @@ import { Preview } from "./preview/Preview";
 import { totalDuration } from "./state/ops";
 import { useProject } from "./state/project";
 import { Timeline } from "./timeline/Timeline";
+import { checkForUpdate, installUpdate, useUpdate } from "./updates";
 
 const TIMELINE_DEFAULT = 236;
 const TIMELINE_MIN = 176;
@@ -62,6 +63,23 @@ function TimelineResizer({ onResize }: { onResize(height: number): void }) {
   );
 }
 
+function UpdateButton() {
+  const ready = useUpdate((state) => state.ready);
+  const installing = useUpdate((state) => state.installing);
+  const exporting = useProject((state) => state.run.status === "running");
+  if (!ready) return null;
+  return (
+    <button
+      className="button"
+      disabled={installing || exporting}
+      title={exporting ? "Available when the export finishes" : `Restart to install version ${ready.version}`}
+      onClick={() => void installUpdate()}
+    >
+      <RefreshCw size={13} /> {installing ? "Restarting" : "Restart to update"}
+    </button>
+  );
+}
+
 function Header() {
   const count = useProject((state) => state.clips.length);
   const total = useProject((state) => totalDuration(state.clips));
@@ -76,6 +94,7 @@ function Header() {
         )}
       </div>
       <div className="header-actions">
+        <UpdateButton />
         <button
           className="button ghost"
           title={`Commands  ${shortcutLabel("mod+K")}`}
@@ -123,6 +142,7 @@ export function App() {
     wireExportEvents();
     backend.onFileDrop({ hover: setDragging, drop: (paths) => void importFiles(paths) });
     void backend.encoders().then((encoders) => useProject.getState().setEncoders(encoders));
+    void checkForUpdate();
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
