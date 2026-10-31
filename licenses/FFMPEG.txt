@@ -1,0 +1,35 @@
+Videotay includes FFmpeg
+========================
+
+Videotay runs two FFmpeg programs, ffmpeg and ffprobe, which come inside the
+app. They are separate programs, not part of Videotay's own code.
+
+They are built with GPL libraries such as x264 and x265, so they are licensed
+under the GNU General Public License, version 3 or later. The licence is in
+GPL-3.0.txt next to this file. FFmpeg comes with no warranty.
+
+
+Which build is included
+-----------------------
+
+ffmpeg-build.txt, next to this file in the app, records where the included
+build was downloaded from, its FFmpeg revision, and how it was configured.
+
+macOS builds are made by Martin Riedl:
+  https://ffmpeg.martin-riedl.de
+  Build scripts: https://git.martin-riedl.de/ffmpeg/build-script
+
+Windows builds are made by BtbN:
+  https://github.com/BtbN/FFmpeg-Builds
+  The build scripts are in the same repository.
+
+
+Source code
+-----------
+
+Every Videotay release on GitHub includes the FFmpeg source for the revision
+it ships, as ffmpeg-source-<revision>.tar.gz:
+  https://github.com/solitudum/videotay/releases
+
+The build scripts above choose which libraries are built into FFmpeg, and
+which versions of them.

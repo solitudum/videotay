@@ -13,4 +13,10 @@ mkdir -p "$out"
 for tool in ffmpeg ffprobe; do
   ln -sf "$(command -v "$tool")" "$out/$tool-$triple"
 done
+# The app bundles this beside the licence, so it has to exist.
+{
+  echo "Development build, using the ffmpeg on PATH. Not for distribution."
+  echo
+  ffmpeg -hide_banner -version
+} > "$out/build-info.txt"
 ls -la "$out"

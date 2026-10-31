@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Downloads static ffmpeg and ffprobe for this platform into src-tauri/binaries,
-# named the way Tauri expects sidecars to be named.
+# named the way Tauri expects sidecars to be named, and records which build it
+# was in build-info.txt, which the app bundles beside the licence.
 set -euo pipefail
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
@@ -8,6 +9,32 @@ out="$root/src-tauri/binaries"
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 mkdir -p "$out"
+
+# Turns a build's version name, like N-128220-gbea9d176f7 or 9.0.2, into an
+# FFmpeg git revision.
+revision() {
+  if [[ "$1" =~ -g([0-9a-f]{7,}) ]]; then
+    echo "${BASH_REMATCH[1]}"
+  else
+    echo "n$1"
+  fi
+}
+
+# Arguments: the ffmpeg binary, its version name, where it was downloaded from,
+# and where its build scripts are.
+record() {
+  local rev
+  rev="$(revision "$2")"
+  {
+    echo "FFmpeg revision: $rev"
+    echo "Source: https://github.com/FFmpeg/FFmpeg/tree/$rev"
+    echo "Downloaded from: $3"
+    echo "Build scripts: $4"
+    echo
+    "$1" -hide_banner -version
+  } > "$out/build-info.txt"
+  head -1 "$out/build-info.txt"
+}
 
 case "$(uname -s)-$(uname -m)" in
   Darwin-arm64)
@@ -25,7 +52,8 @@ case "$(uname -s)-$(uname -m)" in
     unzip -q "$tmp/ffmpeg.zip" -d "$tmp/x"
     cp "$tmp"/x/*/bin/ffmpeg.exe "$out/ffmpeg-$triple.exe"
     cp "$tmp"/x/*/bin/ffprobe.exe "$out/ffprobe-$triple.exe"
-    "$out/ffmpeg-$triple.exe" -hide_banner -version | head -1
+    name="$("$out/ffmpeg-$triple.exe" -hide_banner -version | awk 'NR == 1 {print $3}')"
+    record "$out/ffmpeg-$triple.exe" "$name" "$url" https://github.com/BtbN/FFmpeg-Builds
     exit 0
     ;;
   *)
@@ -46,6 +74,9 @@ for tool in ffmpeg ffprobe; do
   unzip -qo "$tmp/$tool.zip" -d "$tmp"
   mv "$tmp/$tool" "$out/$tool-$triple"
   chmod +x "$out/$tool-$triple"
+  if [ "$tool" = ffmpeg ]; then ffmpeg_url="$url"; fi
 done
 
-"$out/ffmpeg-$triple" -hide_banner -version | head -1
+# The version is in the download's folder name, like 1793460248_N-128220-gbea9d176f7.
+folder="${ffmpeg_url%/*}"
+record "$out/ffmpeg-$triple" "${folder##*_}" "$ffmpeg_url" https://git.martin-riedl.de/ffmpeg/build-script

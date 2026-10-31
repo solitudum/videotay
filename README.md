@@ -56,7 +56,7 @@ Updater signatures need the release key, so skip them when you're only building 
 npx tauri build --config '{"bundle":{"createUpdaterArtifacts":false}}'
 ```
 
-These ffmpeg builds include x264 and x265, which makes them GPL. Distributing the app means complying with the GPL. Builds aren't notarized or code signed, so Gatekeeper and SmartScreen will warn on other machines.
+These ffmpeg builds include x264 and x265, which puts them under the GPL, so see [Licences](#licences) before distributing a build. Builds aren't notarized or code signed, so Gatekeeper and SmartScreen will warn on other machines.
 
 ## Release
 
@@ -79,3 +79,7 @@ Updates are signed with a private key, which CI reads from the `TAURI_SIGNING_PR
 ## Install
 
 Download the `.dmg` or `-setup.exe` from [Releases](https://github.com/solitudum/videotay/releases). Because the builds aren't notarized, macOS blocks the first launch: try to open the app, then choose **Open Anyway** in System Settings → Privacy & Security. On Windows, choose **More info → Run anyway**. Move the app to Applications on macOS, because it can't update itself while it's running from the disk image.
+
+## Licences
+
+The app includes ffmpeg and ffprobe as separate programs. They're licensed under the GPL version 3 or later, as [licenses/FFMPEG.txt](licenses/FFMPEG.txt) explains. Both files in `licenses/` go into the app, along with a record of the exact ffmpeg build that `fetch-ffmpeg` downloaded. Each release built by CI also attaches the FFmpeg source for that build.

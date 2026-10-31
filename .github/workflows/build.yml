@@ -76,8 +76,23 @@ jobs:
         with:
           tagName: ${{ github.ref_name }}
           releaseName: Videotay ${{ github.ref_name }}
+          releaseBody: |
+            Download the `.dmg` for Apple Silicon Macs or the `-setup.exe` for Windows. The builds aren't notarized, so see [Install](https://github.com/${{ github.repository }}#install) for how to open them the first time.
+
+            Videotay includes FFmpeg, licensed under the GPL version 3 or later. Its source is attached below as `ffmpeg-source-*.tar.gz`. See [licenses/FFMPEG.txt](https://github.com/${{ github.repository }}/blob/${{ github.ref_name }}/licenses/FFMPEG.txt).
           releaseDraft: true
           generateReleaseNotes: true
+      # The GPL requires offering the source of the FFmpeg this release ships.
+      - name: Add the FFmpeg source to the draft release
+        if: ${{ startsWith(github.ref, 'refs/tags/') }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          rev="$(sed -n 's/^FFmpeg revision: //p' src-tauri/binaries/build-info.txt)"
+          test -n "$rev"
+          curl -fsSL --retry 5 --retry-all-errors -o "ffmpeg-source-$rev.tar.gz" "https://github.com/FFmpeg/FFmpeg/archive/$rev.tar.gz"
+          gh release upload "$GITHUB_REF_NAME" "ffmpeg-source-$rev.tar.gz" --clobber
 
       # Signing can stop a sidecar from loading, which only shows once it's bundled.
       - name: Check bundled ffmpeg still encodes
